@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model Musteri {
+  ID          Int           @id(map: "PK__Musteri__3214EC27D7E73CCA") @default(autoincrement())
+  Ad          String        @db.NVarChar(50)
+  Soyad       String        @db.NVarChar(50)
+  Email       String        @unique(map: "UQ__Musteri__A9D1053406A68951") @db.NVarChar(100)
+  Sifre       String        @db.NVarChar(100)
+  Telefon     String        @unique(map: "UQ__Musteri__92EB416935D93A4A") @db.NVarChar(15)
+  KayitTarihi DateTime?     @db.DateTime
+  Arac        Arac[]
+  Bildirim    Bildirim[]
+  Rezervasyon Rezervasyon[]
+  EmailDogrulama MusteriEmailDogrulama?
+}
+
+model Arac {
+  ID                Int         @id(map: "PK__Arac__3214EC27716F8D42") @default(autoincrement())
+  MusteriID         Int
+  Marka             String?     @db.NVarChar(50)
+  Model             String?     @db.NVarChar(50)
+  Plaka             String      @unique(map: "UQ__Arac__830E30F7BE4C15C4") @db.NVarChar(20)
+  BataryaKapasitesi Decimal?    @db.Decimal(5, 2)
+  Musteri           Musteri     @relation(fields: [MusteriID], references: [ID], onUpdate: NoAction, map: "FK__Arac__MusteriID__5070F446")
+  SarjIslem         SarjIslem[]
+}
+
+model IstasyonDurum {
+  ID       Int        @id(map: "PK__Istasyon__3214EC27D5A404B9") @default(autoincrement())
+  Durum    String     @db.NVarChar(20)
+  Istasyon Istasyon[]
+}
+
+model Istasyon {
+  ID              Int           @id(map: "PK__Istasyon__3214EC2736805449") @default(autoincrement())
+  Ad              String        @db.NVarChar(100)
+  Konum           String        @db.NVarChar(200)
+  IstasyonDurumID Int
+  Lat             Decimal?      @db.Decimal(9, 6)
+  Lng             Decimal?      @db.Decimal(9, 6)
+  FiyatTarife     FiyatTarife[]
+  IstasyonDurum   IstasyonDurum @relation(fields: [IstasyonDurumID], references: [ID], onUpdate: NoAction, map: "FK__Istasyon__Istasy__5535A963")
+  SarjUnite       SarjUnite[]
+
+  @@index([Lat, Lng], map: "IX_Istasyon_LatLng")
+}
+
+model SarjUniteDurum {
+  ID        Int         @id(map: "PK__SarjUnit__3214EC278A2F7050") @default(autoincrement())
+  Durum     String      @db.NVarChar(20)
+  SarjUnite SarjUnite[]
+}
+
+model SarjUnite {
+  ID               Int            @id(map: "PK__SarjUnit__3214EC270C6E64C2") @default(autoincrement())
+  IstasyonID       Int
+  UniteNo          Int
+  SarjUniteDurumID Int
+  Rezervasyon      Rezervasyon[]
+  Istasyon         Istasyon       @relation(fields: [IstasyonID], references: [ID], onDelete: Cascade, onUpdate: NoAction, map: "FK__SarjUnite__Istas__5AEE82B9")
+  SarjUniteDurum   SarjUniteDurum @relation(fields: [SarjUniteDurumID], references: [ID], onUpdate: NoAction, map: "FK__SarjUnite__SarjU__5BE2A6F2")
+  Soket            Soket[]
+
+  @@unique([IstasyonID, UniteNo], name: "UQ_Istasyon_UniteNo", map: "UQ_Istasyon_UniteNo")
+}
+
+model SoketTip {
+  ID           Int           @id(map: "PK__SoketTip__3214EC27280468B8") @default(autoincrement())
+  Tip          String        @unique(map: "UQ__SoketTip__C451DB04CF0F0F5E") @db.NVarChar(50)
+  MaksAkimA    Decimal       @db.Decimal(5, 2)
+  MaksGerilimV Decimal       @db.Decimal(6, 2)
+  FiyatTarife  FiyatTarife[]
+  Soket        Soket[]
+}
+
+model SoketDurum {
+  ID    Int     @id(map: "PK__SoketDur__3214EC27C461F283") @default(autoincrement())
+  Durum String  @db.NVarChar(20)
+  Soket Soket[]
+}
+
+model Soket {
+  ID           Int         @id(map: "PK__Soket__3214EC27865D1CA1") @default(autoincrement())
+  SarjUniteID  Int
+  SoketTipID   Int
+  SoketDurumID Int
+  SarjIslem    SarjIslem[]
+  SarjUnite    SarjUnite   @relation(fields: [SarjUniteID], references: [ID], onDelete: Cascade, onUpdate: NoAction, map: "FK__Soket__SarjUnite__6383C8BA")
+  SoketDurum   SoketDurum  @relation(fields: [SoketDurumID], references: [ID], onUpdate: NoAction, map: "FK__Soket__SoketDuru__656C112C")
+  SoketTip     SoketTip    @relation(fields: [SoketTipID], references: [ID], onUpdate: NoAction, map: "FK__Soket__SoketTipI__6477ECF3")
+}
+
+model FiyatTarife {
+  ID               Int         @id(map: "PK__FiyatTar__3214EC27E33FA175") @default(autoincrement())
+  IstasyonID       Int
+  SoketTipID       Int
+  BirimFiyat       Decimal     @db.Decimal(6, 2)
+  GuncellemeTarihi DateTime?   @db.DateTime
+  Istasyon         Istasyon    @relation(fields: [IstasyonID], references: [ID], onDelete: Cascade, onUpdate: NoAction, map: "FK__FiyatTari__Istas__6A30C649")
+  SoketTip         SoketTip    @relation(fields: [SoketTipID], references: [ID], onUpdate: NoAction, map: "FK__FiyatTari__Soket__6B24EA82")
+  SarjIslem        SarjIslem[]
+
+  @@unique([IstasyonID, SoketTipID], name: "UQ_Istasyon_SoketTipi", map: "UQ_Istasyon_SoketTipi")
+}
+
+model SarjIslemDurum {
+  ID        Int         @id(map: "PK__SarjIsle__3214EC2724E3D7A8") @default(autoincrement())
+  Durum     String      @db.NVarChar(20)
+  SarjIslem SarjIslem[]
+}
+
+model SarjIslem {
+  ID                  Int            @id(map: "PK__SarjIsle__3214EC27A74C2962") @default(autoincrement())
+  AracID              Int
+  SoketID             Int
+  FiyatTarifeID       Int
+  UygulananBirimFiyat Decimal?       @db.Decimal(10, 2)
+  BaslangicZamani     DateTime?      @db.DateTime
+  BitisZamani         DateTime?      @db.DateTime
+  HarcananEnerjiKWh   Decimal?       @db.Decimal(10, 2)
+  Ucret               Decimal?       @db.Decimal(10, 2)
+  SarjIslemDurumID    Int
+  Odeme               Odeme[]
+  Arac                Arac           @relation(fields: [AracID], references: [ID], onUpdate: NoAction, map: "FK__SarjIslem__AracI__70DDC3D8")
+  FiyatTarife         FiyatTarife    @relation(fields: [FiyatTarifeID], references: [ID], onUpdate: NoAction, map: "FK__SarjIslem__Fiyat__72C60C4A")
+  SarjIslemDurum      SarjIslemDurum @relation(fields: [SarjIslemDurumID], references: [ID], onUpdate: NoAction, map: "FK__SarjIslem__SarjI__73BA3083")
+  Soket               Soket          @relation(fields: [SoketID], references: [ID], onUpdate: NoAction, map: "FK__SarjIslem__Soket__71D1E811")
+}
+
+model RezervasyonDurum {
+  ID          Int           @id(map: "PK__Rezervas__3214EC27C9175EED") @default(autoincrement())
+  Durum       String        @db.NVarChar(20)
+  Rezervasyon Rezervasyon[]
+}
+
+model Rezervasyon {
+  ID                 Int              @id(map: "PK__Rezervas__3214EC27262F5B24") @default(autoincrement())
+  MusteriID          Int
+  SarjUniteID        Int
+  RezervasyonZamani  DateTime?        @db.DateTime
+  BitisZamani        DateTime?        @db.DateTime
+  RezervasyonDurumID Int
+  Musteri            Musteri          @relation(fields: [MusteriID], references: [ID], onUpdate: NoAction, map: "FK__Rezervasy__Muste__7A672E12")
+  RezervasyonDurum   RezervasyonDurum @relation(fields: [RezervasyonDurumID], references: [ID], onUpdate: NoAction, map: "FK__Rezervasy__Rezer__7C4F7684")
+  SarjUnite          SarjUnite        @relation(fields: [SarjUniteID], references: [ID], onUpdate: NoAction, map: "FK__Rezervasy__SarjU__7B5B524B")
+
+  @@unique([SarjUniteID, RezervasyonZamani], name: "UQ_UniteZaman", map: "UQ_UniteZaman")
+}
+
+model Yonetici {
+  YoneticiID Int    @id(map: "PK__Yonetici__2E84AC90B0BEC1FD") @default(autoincrement())
+  Ad         String @db.NVarChar(50)
+  Soyad      String @db.NVarChar(50)
+  Email      String @unique(map: "UQ__Yonetici__A9D1053444A1F0CA") @db.NVarChar(100)
+  Sifre      String @db.NVarChar(100)
+  Telefon    String @db.NVarChar(15)
+}
+
+model OdemeYontemi {
+  ID     Int     @id(map: "PK__OdemeYon__3214EC279D5C12F7") @default(autoincrement())
+  Yontem String  @db.NVarChar(20)
+  Odeme  Odeme[]
+}
+
+model Odeme {
+  ID             Int          @id(map: "PK__Odeme__3214EC276BB60A1A") @default(autoincrement())
+  SarjIslemID    Int
+  OdemeTarihi    DateTime?    @db.DateTime
+  OdemeTutari    Decimal      @db.Decimal(6, 2)
+  OdemeYontemiID Int
+  OdemeYontemi   OdemeYontemi @relation(fields: [OdemeYontemiID], references: [ID], onUpdate: NoAction, map: "FK__Odeme__OdemeYont__05D8E0BE")
+  SarjIslem      SarjIslem    @relation(fields: [SarjIslemID], references: [ID], onUpdate: NoAction, map: "FK__Odeme__SarjIslem__04E4BC85")
+}
+
+model Bildirim {
+  ID        Int       @id(map: "PK__Bildirim__3214EC2789F98AC6") @default(autoincrement())
+  MusteriID Int
+  Baslik    String?   @db.NVarChar(100)
+  Mesaj     String?   @db.NVarChar(300)
+  Tarih     DateTime? @db.DateTime
+  Okundu    Boolean?
+  Musteri   Musteri   @relation(fields: [MusteriID], references: [ID], onUpdate: NoAction, map: "FK__Bildirim__Muster__0A9D95DB")
+}
+
+model sysdiagrams {
+  name         String @db.NVarChar(128)
+  principal_id Int
+  diagram_id   Int    @id(map: "PK__sysdiagr__C2B05B61E467C6CC") @default(autoincrement())
+  version      Int?
+  definition   Bytes?
+
+  @@unique([principal_id, name], map: "UK_principal_name")
+}
+
+model MusteriEmailDogrulama {
+  MusteriID Int      @id
+  TokenHash String   @unique @db.NVarChar(64)
+  ExpiresAt DateTime @db.DateTime
+  CreatedAt DateTime @default(now()) @db.DateTime
+
+  Musteri Musteri @relation(fields: [MusteriID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("MusteriEmailDogrulama")
+}
